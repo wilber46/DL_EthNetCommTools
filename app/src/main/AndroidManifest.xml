@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          package="win.wilber.commassistant"
+          android:versionCode="3"
+          android:versionName="1.2">
+
+    <uses-permission android:name="android.permission.ACCESS_SUPERUSER"/>
+    <!--android:debuggable="true"-->
+    <application
+        android:name="win.wilber.commassistant.activity.Application"
+        android:icon="@drawable/icon"
+        android:label="@string/app_name">
+        <activity
+            android:name="win.wilber.commassistant.activity.MainActivity"
+            android:label="@string/app_name"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="stateHidden|stateAlwaysHidden|adjustResize|adjustNothing">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+        <activity android:name="win.wilber.commassistant.activity.SerialPortPreferences">
+            <intent-filter>
+                <action android:name="android.intent.SerialPreference"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <!--<activity-->
+            <!--android:name="win.wilber.commassistant.activity.SettingActivity"-->
+            <!--android:label="@string/title_activity_setting"-->
+            <!--android:screenOrientation="portrait"/>-->
+        <activity
+            android:name="win.wilber.commassistant.activity.Setting"
+            android:label="@string/title_activity_setting">
+            <intent-filter>
+                <action android:name="android.intent.action.setting"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+    </application>
+    <uses-sdk android:minSdkVersion="2"/>
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+    <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.GET_TASKS"/>
+</manifest>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">串口调试助手</string>
+    <string name="about_msg">Serial Port API sample v1.1\n \n This program is the sample application provided with project android-serialport-api.\n \n More information and bug report on [http://code.google.com/p/android-serialport-api]\n \n Copyright 2010-2011 Cedric Priscal\n \n Licensed under the Apache License, Version 2.0 (the License); you may not use this file except in compliance with the License. You may obtain a copy of the License at\n \n http://www.apache.org/licenses/LICENSE-2.0\n \n Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an AS IS BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.\n</string>
+    <string name="error_configuration">请检查您的串口配置</string>
+    <string name="error_security">没法获得串口读写权限</string>
+    <string name="error_unknown">不明错误</string>
+    <string name="title_activity_setting">串口设置</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">串口设置</string>
+    <string name="title_activity_splash">串口调试助手</string>
+    <string name="title_activity_login">Sign in</string>
+    <string name="prompt_email">Email</string>
+    <string name="prompt_password">Password</string>
+    <string name="action_sign_in_register">Sign in or register</string>
+    <string name="action_sign_in_short">Sign in</string>
+    <string name="action_forgot_password">Recover lost password</string>
+    <string name="login_progress_signing_in">Signing in…</string>
+    <string name="error_invalid_email">This email address is invalid</string>
+    <string name="error_invalid_password">This password is too short</string>
+    <string name="error_incorrect_password">This password is incorrect</string>
+    <string name="error_field_required">This field is required</string>
+</resources>
