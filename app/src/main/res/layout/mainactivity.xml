@@ -16,6 +16,13 @@
             android:layout_height="match_parent"
             android:orientation="vertical"
             >
+            <ToggleButton
+                android:id="@+id/powerEth"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textOn="关闭网卡模块电源"
+                android:textOff="打开网卡模块电源"
+                />
 
             <Button
                 android:id="@+id/connect"
@@ -34,6 +41,7 @@
                 android:id="@+id/hex"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:visibility="gone"
                 android:layout_gravity="top|bottom|center_vertical|fill_vertical|center|fill"
                 android:layout_weight="1.0"
                 android:textOff="CHAR"
@@ -46,6 +54,28 @@
                 android:layout_gravity="top|bottom|center_vertical|fill_vertical|center|fill"
                 android:layout_weight="1.0"
                 android:text="清除"/>
+
+            <EditText
+                android:id="@+id/remoteIp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="10.0.0.42"
+                android:hint="输入远程主机IP"/>
+
+            <EditText
+                android:id="@+id/remotePort"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="12345"
+                android:hint="输入远程主机端口"/>
+
+            <Button
+                android:id="@+id/configUdpMode"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="配置UDP模式"
+                android:layout_weight="1"
+                />
             
             <ToggleButton
                 android:id="@+id/mode_at_data"

@@ -6,6 +6,7 @@ import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -19,12 +20,19 @@ import android.widget.Toast;
 import android.widget.ToggleButton;
 
 
+import com.yunovo.devicenode.DeviceNodeManager;
+
 import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import win.wilber.commassistant.R;
 import win.wilber.commassistant.util.Cmd;
+import win.wilber.commassistant.util.DataUtil;
+
+import static win.wilber.commassistant.util.DataUtil.isAllHex;
+import static win.wilber.commassistant.util.DataUtil.toByteArray;
+import static win.wilber.commassistant.util.DataUtil.toHexString;
 
 public class MainActivity extends SerialPortActivity implements View.OnClickListener, OnCheckedChangeListener {
     private final int MAX_LENGTH = 65536;
@@ -47,8 +55,12 @@ public class MainActivity extends SerialPortActivity implements View.OnClickList
     private Button setting;
     private Timer timer = null;
     private ScrollView mScrollView;
-    private ToggleButton mDataAtMode;
+    private ToggleButton mDataAtMode,mPowerEth;
+    private Button mConfigUdpMode;
+    private EditText mRemoteIp,mRemotePort;
     private boolean mIsAtMode = true;
+
+    private DeviceNodeManager mDeviceNodeManager;
 
     @Override
     public void onBackPressed() {
@@ -56,6 +68,7 @@ public class MainActivity extends SerialPortActivity implements View.OnClickList
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 new Handler().postDelayed(new Runnable() {
+                    @Override
                     public void run() {
                         ExitApplication.getInstance().Exit();
                     }
@@ -144,6 +157,11 @@ public class MainActivity extends SerialPortActivity implements View.OnClickList
         mReceiveCount = (TextView) findViewById(R.id.receiveCount);
         mScrollView = (ScrollView) findViewById(R.id.sv_display);
         mDataAtMode = (ToggleButton) findViewById(R.id.mode_at_data);
+        mConfigUdpMode = (Button) findViewById(R.id.configUdpMode);
+        mRemoteIp = (EditText) findViewById(R.id.remoteIp);
+        mRemotePort = (EditText) findViewById(R.id.remotePort);
+        mPowerEth = (ToggleButton) findViewById(R.id.powerEth);
+
         isHex = hex.isChecked();
         timer = null;
         send.setEnabled(false);
@@ -156,73 +174,16 @@ public class MainActivity extends SerialPortActivity implements View.OnClickList
         clear.setOnClickListener(this);
         auto_send.setOnCheckedChangeListener(this);
         mDataAtMode.setOnCheckedChangeListener(this);
+        mConfigUdpMode.setOnClickListener(this);
+        mPowerEth.setOnCheckedChangeListener(this);
+
+        mDeviceNodeManager = new DeviceNodeManager(this);
+        if(null != mDeviceNodeManager) {
+            mPowerEth.setChecked(mDeviceNodeManager.getEthNetStatus());
+        }
     }
 
-    private String toHexString(byte[] arg, int length) {
-        String result = new String();
-        if (arg == null) {
-            return "";
-        }
-        int i = 0;
-        while (i < length) {
-            result = new StringBuilder(String.valueOf(result)).append(Integer.toHexString(new Integer(arg[i] < (byte) 0 ? arg[i] + 256 : arg[i]).intValue())).append(" ").toString();
-            Log.i("result", result);
-            i++;
-        }
-        return result;
-    }
 
-    private boolean isAllHex(String arg) {
-        if (arg == null) {
-            return false;
-        }
-        char[] array = arg.toCharArray();
-        int i = 0;
-        while (i < array.length) {
-            if (array[i] != ' ' && ((array[i] < '0' || array[i] > '9') && ((array[i] < 'a' || array[i] > 'f') && (array[i] < 'A' || array[i] > 'F')))) {
-                return false;
-            }
-            i++;
-        }
-        return true;
-    }
-
-    private byte[] toByteArray(String arg) {
-        if (arg != null) {
-            int i;
-            char[] NewArray = new char[65536];
-            char[] array = arg.toCharArray();
-            int length = 0;
-            for (i = 0; i < array.length; i++) {
-                if (array[i] != ' ') {
-                    NewArray[length] = array[i];
-                    length++;
-                }
-            }
-            int EvenLength = length % 2 == 0 ? length : length + 1;
-            if (EvenLength != 0) {
-                int[] data = new int[EvenLength];
-                data[EvenLength - 1] = 0;
-                i = 0;
-                while (i < length) {
-                    if (NewArray[i] >= '0' && NewArray[i] <= '9') {
-                        data[i] = NewArray[i] - 48;
-                    } else if (NewArray[i] >= 'a' && NewArray[i] <= 'f') {
-                        data[i] = (NewArray[i] - 97) + 10;
-                    } else if (NewArray[i] >= 'A' && NewArray[i] <= 'F') {
-                        data[i] = (NewArray[i] - 65) + 10;
-                    }
-                    i++;
-                }
-                byte[] byteArray = new byte[(EvenLength / 2)];
-                for (i = 0; i < EvenLength / 2; i++) {
-                    byteArray[i] = (byte) ((data[i * 2] * 16) + data[(i * 2) + 1]);
-                }
-                return byteArray;
-            }
-        }
-        return new byte[0];
-    }
 
     @Override
     protected void openDevice() {
@@ -254,7 +215,10 @@ public class MainActivity extends SerialPortActivity implements View.OnClickList
                 mIsAtMode = true;
             }
         }
-        else {
+        else if(buttonView == mPowerEth) {
+            powerEth(isChecked);
+        }
+        else if(buttonView == hex) {
             hex(isChecked);
         }
     }
@@ -263,7 +227,7 @@ public class MainActivity extends SerialPortActivity implements View.OnClickList
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.send: {
-                send();
+                send("");
                 break;
             }
             case R.id.clear: {
@@ -278,10 +242,58 @@ public class MainActivity extends SerialPortActivity implements View.OnClickList
                 goSetting();
                 break;
             }
+            case R.id.configUdpMode: {
+                configUdpMode();
+            }
         }
     }
 
-    void send() {
+    void powerEth(boolean enable) {
+        if(null != mDeviceNodeManager) {
+            if(enable) {
+                if(!mDeviceNodeManager.getEthNetStatus()) {
+                    mDeviceNodeManager.setEthNetStatus(true);
+                }
+            } else {
+                if(mDeviceNodeManager.getEthNetStatus()) {
+                    mDeviceNodeManager.setEthNetStatus(false);
+                }
+            }
+        }
+    }
+
+    private void configUdpMode() {
+        send(Cmd.enableEcho(true));
+        send(Cmd.configWorkMode(Cmd.MODE_UDP));
+        send(Cmd.DHCP);
+        send(Cmd.getLocalPort("5000"));
+        String remotePort = "";
+        String remoteIP = "";
+        if(null != mRemotePort) {
+            String tmpPort = mRemotePort.getText().toString();
+            if(TextUtils.isEmpty(tmpPort)) {
+                remotePort = "192.168.1.99";
+            } else {
+                remotePort = tmpPort;
+            }
+        }
+        send(Cmd.getRemotePort(remotePort));
+
+        if(null != mRemoteIp) {
+            String tmpIp = mRemoteIp.getText().toString();
+            if(TextUtils.isEmpty(tmpIp)) {
+                remoteIP = "5000";
+            } else {
+                remoteIP = tmpIp;
+            }
+        }
+        send(Cmd.getRemoteIp(remoteIP));
+//        send(Cmd.getRemoteIp("10.0.0.122"));
+//        send(Cmd.getRemotePort("12345"));
+        send(Cmd.EXIT_MODE_AT);
+    }
+
+    void send(String content) {
         boolean isSuccessful = false;
         if (!Application.OpenFlag.booleanValue()) {
             Toast warning = Toast.makeText(getApplicationContext(), "请先连接", 0);
@@ -290,7 +302,12 @@ public class MainActivity extends SerialPortActivity implements View.OnClickList
         } else if (!isHex) {
             isSuccessful = true;
             try {
-                String text = mSend.getText().toString();
+                String text = "";
+                if(TextUtils.isEmpty(content)) {
+                    text = mSend.getText().toString();
+                } else {
+                    text = content;
+                }
 
                 if(mIsAtMode) {
                     text += "\r\n";
@@ -417,6 +434,7 @@ public class MainActivity extends SerialPortActivity implements View.OnClickList
                             mOutputStream.write(toByteArray(mSend.getText().toString()));
                         } catch (IOException e3) {
                             runOnUiThread(new Runnable() {
+                                @Override
                                 public void run() {
                                     Toast.makeText(MainActivity.this, "发送失败！", 100).show();
                                 }
@@ -428,6 +446,7 @@ public class MainActivity extends SerialPortActivity implements View.OnClickList
                                 SendCount = SendCount + toByteArray(mSend.getText().toString()).length;
                             }
                             runOnUiThread(new Runnable() {
+                                @Override
                                 public void run() {
                                     mSendCount.setText(String.valueOf(SendCount));
                                 }
