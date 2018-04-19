@@ -16,13 +16,19 @@
             android:layout_height="match_parent"
             android:orientation="vertical"
             >
-            <ToggleButton
+
+            <CheckBox
                 android:id="@+id/powerEth"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textOn="关闭网卡模块电源"
-                android:textOff="打开网卡模块电源"
+                android:text="打开网卡模块电源"
                 />
+            <CheckBox
+                android:id="@+id/hex"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                android:text="HEX"/>
 
             <Button
                 android:id="@+id/connect"
@@ -37,16 +43,6 @@
                 android:text="设置"/>
 
 
-            <ToggleButton
-                android:id="@+id/hex"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:visibility="gone"
-                android:layout_gravity="top|bottom|center_vertical|fill_vertical|center|fill"
-                android:layout_weight="1.0"
-                android:textOff="CHAR"
-                android:textOn="HEX"/>
-
             <Button
                 android:id="@+id/clear"
                 android:layout_width="match_parent"
@@ -55,19 +51,104 @@
                 android:layout_weight="1.0"
                 android:text="清除"/>
 
-            <EditText
-                android:id="@+id/remoteIp"
+            <CheckBox
+                android:id="@+id/configStaticIp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="10.0.0.42"
-                android:hint="输入远程主机IP"/>
+                android:text="配置静态IP"
+                />
 
-            <EditText
-                android:id="@+id/remotePort"
+            <LinearLayout
+                android:visibility="gone"
+                android:id="@+id/ll_staticIp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="12345"
-                android:hint="输入远程主机端口"/>
+                android:orientation="vertical">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_weight="@dimen/tv_weight"
+                        android:layout_height="wrap_content"
+                        android:text="本机IP："/>
+                    <EditText
+                        android:id="@+id/localIp"
+                        android:layout_width="0dp"
+                        android:layout_weight="@dimen/et_weight"
+                        android:text="192.168.1.77"
+                        android:layout_height="wrap_content"/>
+                </LinearLayout>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_weight="@dimen/tv_weight"
+                        android:layout_height="wrap_content"
+                        android:text="本机子网掩码："/>
+                    <EditText
+                        android:id="@+id/localNetMask"
+                        android:layout_width="0dp"
+                        android:layout_weight="@dimen/et_weight"
+                        android:text="255.255.255.0"
+                        android:layout_height="wrap_content"/>
+                </LinearLayout>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_weight="@dimen/tv_weight"
+                        android:layout_height="wrap_content"
+                        android:text="本机网关："/>
+                    <EditText
+                        android:id="@+id/localGateway"
+                        android:layout_width="0dp"
+                        android:text="192.168.1.1"
+                        android:layout_weight="@dimen/et_weight"
+                        android:layout_height="wrap_content"/>
+                </LinearLayout>
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_weight="@dimen/tv_weight"
+                    android:layout_height="wrap_content"
+                    android:text="远程主机IP："/>
+                <EditText
+                    android:id="@+id/remoteIp"
+                    android:layout_weight="@dimen/et_weight"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:text="192.168.1.99"
+                    android:hint="输入远程主机IP"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_weight="@dimen/tv_weight"
+                    android:layout_height="wrap_content"
+                    android:text="远程主机端口："/>
+                <EditText
+                    android:id="@+id/remotePort"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="@dimen/et_weight"
+                    android:text="12345"
+                    android:hint="输入远程主机端口"/>
+            </LinearLayout>
+
 
             <Button
                 android:id="@+id/configUdpMode"
@@ -118,6 +199,12 @@
                     android:layout_alignParentRight="true"
                     android:text="自动发送"/>
             </RelativeLayout>
+
+            <Button
+                android:id="@+id/reset"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="网卡恢复出厂重置"/>
         </LinearLayout>
     </ScrollView>
 

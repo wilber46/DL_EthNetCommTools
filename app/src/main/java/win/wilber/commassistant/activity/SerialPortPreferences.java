@@ -26,7 +26,7 @@ public class SerialPortPreferences extends PreferenceActivity {
         devices.setEntries(entries);
         devices.setEntryValues(entryValues);
         devices.setSummary(devices.getValue());
-        devices.setValue("/dev/ttyMT3");
+//        devices.setValue("/dev/ttyMT3");
         devices.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
             @Override
             public boolean onPreferenceChange(Preference preference, Object newValue) {
@@ -37,7 +37,7 @@ public class SerialPortPreferences extends PreferenceActivity {
 
         ListPreference baudrates = (ListPreference) findPreference("BAUDRATE");
         baudrates.setSummary(baudrates.getValue());
-        baudrates.setValue("115200");
+//        baudrates.setValue("115200");
         baudrates.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
             @Override
             public boolean onPreferenceChange(Preference preference, Object newValue) {

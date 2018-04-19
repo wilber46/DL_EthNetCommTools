@@ -14,6 +14,7 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -28,7 +29,6 @@ import java.util.TimerTask;
 
 import win.wilber.commassistant.R;
 import win.wilber.commassistant.util.Cmd;
-import win.wilber.commassistant.util.DataUtil;
 
 import static win.wilber.commassistant.util.DataUtil.isAllHex;
 import static win.wilber.commassistant.util.DataUtil.toByteArray;
@@ -36,13 +36,12 @@ import static win.wilber.commassistant.util.DataUtil.toHexString;
 
 public class MainActivity extends SerialPortActivity implements View.OnClickListener, OnCheckedChangeListener {
     private final int MAX_LENGTH = 65536;
-    private byte[] OriginalReceive = new byte[65536];
+//    private byte[] OriginalReceive = new byte[65536];
+    private StringBuilder mReceiver = new StringBuilder();
     private int ReceiveCount = 0;
     private int SendCount;
     private CheckBox auto_send;
-    private Button clear;
-    private Button connect;
-    private ToggleButton hex;
+    private Button clear,connect,send,setting,mConfigUdpMode,mReset;
     private int interval;
     private boolean isHex;
     private TextView mReceiveCount;
@@ -50,15 +49,15 @@ public class MainActivity extends SerialPortActivity implements View.OnClickList
     private TextView mReception;
     private EditText mSend;
     private TextView mSendCount;
-    private Button send;
     private EditText send_interval;
-    private Button setting;
     private Timer timer = null;
     private ScrollView mScrollView;
-    private ToggleButton mDataAtMode,mPowerEth;
-    private Button mConfigUdpMode;
-    private EditText mRemoteIp,mRemotePort;
+    private CheckBox mPowerEth, mConfigStaticIp,hex;
+    private ToggleButton mDataAtMode;
+    private EditText mRemoteIp,mRemotePort,mLocalIp,mLocalNetMask,mLocalGateway;
+    private LinearLayout mLLStaticIp;
     private boolean mIsAtMode = true;
+    private boolean mIsStaticIpMode = true;
 
     private DeviceNodeManager mDeviceNodeManager;
 
@@ -108,41 +107,77 @@ public class MainActivity extends SerialPortActivity implements View.OnClickList
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if (mReception != null) {
-                    OriginalReceive = appedByteArray(buffer, size);
-                    ReceiveCount = ReceiveCount + size;
-                    if (ReceiveCount > 65536) {
-                        ReceiveCount = 0;
-                    }
-                    mReceiveCount.setText(String.valueOf(ReceiveCount));
-                    isHex = hex.isChecked();
-                    if (isHex) {
-                        byte[] toShow = new byte[1000];
-                        if (ReceiveCount > 1000) {
-                            for (int i = 0; i < 1000; i++) {
-                                toShow[i] = OriginalReceive[(ReceiveCount - 1000) + i];
-                            }
-                        }
-//                        mReception.setText(toHexString(toShow, 1000));
-//                        mReception.setSelection(mReception.length());
-                        appendDisplay(toHexString(toShow,1000));
-                        return;
-                    }
-                    if (OriginalReceive != null) {
-//                        mReception.setText(new String(OriginalReceive, 0, ReceiveCount));
-                        appendDisplay(new String(OriginalReceive, 0, ReceiveCount));
-                    }
-//                    mReception.setSelection(mReception.length());
-                }
+                handleData(buffer,size);
+//                if (mReception != null) {
+//                    OriginalReceive = appedByteArray(buffer, size);
+//                    ReceiveCount = ReceiveCount + size;
+//                    if (ReceiveCount > 65536) {
+//                        ReceiveCount = 0;
+//                    }
+//                    mReceiveCount.setText(String.valueOf(ReceiveCount));
+//                    isHex = hex.isChecked();
+//                    if (isHex) {
+//                        byte[] toShow = new byte[1000];
+//                        if (ReceiveCount > 1000) {
+//                            for (int i = 0; i < 1000; i++) {
+//                                toShow[i] = OriginalReceive[(ReceiveCount - 1000) + i];
+//                            }
+//                        }
+////                        mReception.setText(toHexString(toShow, 1000));
+////                        mReception.setSelection(mReception.length());
+//                        appendDisplay(toHexString(toShow,1000));
+//                        return;
+//                    }
+//                    if (OriginalReceive != null) {
+////                        mReception.setText(new String(OriginalReceive, 0, ReceiveCount));
+//                        appendDisplay(new String(OriginalReceive, 0, ReceiveCount));
+//                    }
+////                    mReception.setSelection(mReception.length());
+//                }
             }
         });
+    }
+
+    private void handleData(byte[] buffer, int size) {
+        if (mReception != null) {
+            String data = new String(buffer);
+            mReceiver.append(data);
+
+            ReceiveCount += size;
+            mReceiveCount.setText(String.valueOf(ReceiveCount));
+            isHex = hex.isChecked();
+            if (isHex) {
+                mReception.setText("");
+                appendDisplay(toHexString(mReceiver.toString().getBytes(),mReceiver.length()));
+                return;
+            }
+
+            appendDisplay(data);
+        }
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Application.OpenFlag = Boolean.valueOf(false);
+
         setContentView(R.layout.mainactivity);
+
+        Application.OpenFlag = Boolean.valueOf(false);
+
+        initView();
+
+        mConfigStaticIp.setChecked(mIsStaticIpMode);
+
+        isHex = hex.isChecked();
+        timer = null;
+
+        mDeviceNodeManager = new DeviceNodeManager(this);
+        if(null != mDeviceNodeManager) {
+            mPowerEth.setChecked(mDeviceNodeManager.getEthNetStatus());
+        }
+    }
+
+    void initView() {
         setting = (Button) findViewById(R.id.setting);
         connect = (Button) findViewById(R.id.connect);
         send = (Button) findViewById(R.id.send);
@@ -150,7 +185,7 @@ public class MainActivity extends SerialPortActivity implements View.OnClickList
 //        mReception = (EditText) findViewById(R.id.display);
         mReception = (TextView) findViewById(R.id.display);
         mSend = (EditText) findViewById(R.id.sendbuf);
-        hex = (ToggleButton) findViewById(R.id.hex);
+        hex = (CheckBox) findViewById(R.id.hex);
         auto_send = (CheckBox) findViewById(R.id.auto_send);
         send_interval = (EditText) findViewById(R.id.send_interval);
         mSendCount = (TextView) findViewById(R.id.sendCount);
@@ -160,10 +195,14 @@ public class MainActivity extends SerialPortActivity implements View.OnClickList
         mConfigUdpMode = (Button) findViewById(R.id.configUdpMode);
         mRemoteIp = (EditText) findViewById(R.id.remoteIp);
         mRemotePort = (EditText) findViewById(R.id.remotePort);
-        mPowerEth = (ToggleButton) findViewById(R.id.powerEth);
+        mPowerEth = (CheckBox) findViewById(R.id.powerEth);
+        mLLStaticIp = (LinearLayout) findViewById(R.id.ll_staticIp);
+        mLocalIp = (EditText) findViewById(R.id.localIp);
+        mLocalNetMask = (EditText) findViewById(R.id.localNetMask);
+        mLocalGateway = (EditText) findViewById(R.id.localGateway);
+        mConfigStaticIp = (CheckBox) findViewById(R.id.configStaticIp);
+        mReset = (Button) findViewById(R.id.reset);
 
-        isHex = hex.isChecked();
-        timer = null;
         send.setEnabled(false);
         auto_send.setEnabled(false);
         ExitApplication.getInstance().addActivity(this);
@@ -176,13 +215,9 @@ public class MainActivity extends SerialPortActivity implements View.OnClickList
         mDataAtMode.setOnCheckedChangeListener(this);
         mConfigUdpMode.setOnClickListener(this);
         mPowerEth.setOnCheckedChangeListener(this);
-
-        mDeviceNodeManager = new DeviceNodeManager(this);
-        if(null != mDeviceNodeManager) {
-            mPowerEth.setChecked(mDeviceNodeManager.getEthNetStatus());
-        }
+        mConfigStaticIp.setOnCheckedChangeListener(this);
+        mReset.setOnClickListener(this);
     }
-
 
 
     @Override
@@ -196,12 +231,12 @@ public class MainActivity extends SerialPortActivity implements View.OnClickList
         super.onDestroy();
     }
 
-    byte[] appedByteArray(byte[] newAppend, int newLength) {
-        for (int i = 0; i < newLength; i++) {
-            OriginalReceive[ReceiveCount + i] = newAppend[i];
-        }
-        return OriginalReceive;
-    }
+//    byte[] appedByteArray(byte[] newAppend, int newLength) {
+//        for (int i = 0; i < newLength; i++) {
+//            OriginalReceive[ReceiveCount + i] = newAppend[i];
+//        }
+//        return OriginalReceive;
+//    }
 
     @Override
     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -220,6 +255,18 @@ public class MainActivity extends SerialPortActivity implements View.OnClickList
         }
         else if(buttonView == hex) {
             hex(isChecked);
+        }
+        else if(mConfigStaticIp == buttonView) {
+            switchDhcp(isChecked);
+        }
+    }
+
+    private void switchDhcp(boolean checked) {
+        mIsStaticIpMode = checked;
+        if(checked) {
+            mLLStaticIp.setVisibility(View.VISIBLE);
+        } else {
+            mLLStaticIp.setVisibility(View.GONE);
         }
     }
 
@@ -244,7 +291,20 @@ public class MainActivity extends SerialPortActivity implements View.OnClickList
             }
             case R.id.configUdpMode: {
                 configUdpMode();
+                break;
             }
+            case R.id.reset: {
+                reset();
+                break;
+            }
+        }
+    }
+
+    private void reset() {
+        if(!mIsAtMode) {
+            Toast.makeText(this,"请退出数据模式再操作",Toast.LENGTH_SHORT).show();
+        } else {
+            send(Cmd.reset("admin"));   // 默认密码为admin
         }
     }
 
@@ -265,14 +325,17 @@ public class MainActivity extends SerialPortActivity implements View.OnClickList
     private void configUdpMode() {
         send(Cmd.enableEcho(true));
         send(Cmd.configWorkMode(Cmd.MODE_UDP));
-        send(Cmd.DHCP);
+        send(Cmd.configDhcpMode(mIsStaticIpMode ? Cmd.MODE_STATIC_IP : Cmd.MODE_DHCP));
         send(Cmd.getLocalPort("5000"));
         String remotePort = "";
         String remoteIP = "";
+        String localIp = "";
+        String localMask = "";
+        String localGateway = "";
         if(null != mRemotePort) {
             String tmpPort = mRemotePort.getText().toString();
             if(TextUtils.isEmpty(tmpPort)) {
-                remotePort = "192.168.1.99";
+                remotePort = "12345";
             } else {
                 remotePort = tmpPort;
             }
@@ -282,12 +345,44 @@ public class MainActivity extends SerialPortActivity implements View.OnClickList
         if(null != mRemoteIp) {
             String tmpIp = mRemoteIp.getText().toString();
             if(TextUtils.isEmpty(tmpIp)) {
-                remoteIP = "5000";
+                remoteIP = "192.168.1.99";
             } else {
                 remoteIP = tmpIp;
             }
         }
         send(Cmd.getRemoteIp(remoteIP));
+
+        if(mIsStaticIpMode) {
+            if(null != mLocalIp) {
+                String ip = mLocalIp.getText().toString();
+                if(TextUtils.isEmpty(ip)) {
+                    localIp = "192.168.1.77";
+                } else {
+                    localIp = ip;
+                }
+            }
+            send(Cmd.getLocalIp(localIp));
+
+            if(null != mLocalNetMask) {
+                String mask = mLocalNetMask.getText().toString();
+                if(TextUtils.isEmpty(mask)) {
+                    localMask = "255.255.255.0";
+                } else {
+                    localMask = mask;
+                }
+            }
+            send(Cmd.getLocalMask(localMask));
+
+            if(null != mLocalGateway) {
+                String gateway = mLocalGateway.getText().toString();
+                if(TextUtils.isEmpty(gateway)) {
+                    localGateway = "192.168.1.1";
+                } else {
+                    localGateway = gateway;
+                }
+            }
+            send(Cmd.getLocalGateway(localGateway));
+        }
 //        send(Cmd.getRemoteIp("10.0.0.122"));
 //        send(Cmd.getRemotePort("12345"));
         send(Cmd.EXIT_MODE_AT);
@@ -477,19 +572,30 @@ public class MainActivity extends SerialPortActivity implements View.OnClickList
     void hex(boolean isChecked) {
         isHex = isChecked;
         if (!isChecked) {
-            if (OriginalReceive != null) {
-                mReception.setText(new String(OriginalReceive, 0, ReceiveCount));
+//            if (OriginalReceive != null) {
+//                mReception.setText(new String(OriginalReceive, 0, ReceiveCount));
+//            }
+            if(mReceiver.length() > 0) {
+                mReception.setText("");
+                appendDisplay(mReceiver.toString());
             }
 //            mReception.setSelection(mReception.length());
-        } else if (OriginalReceive != null) {
-            byte[] toShow = new byte[1000];
-            if (ReceiveCount > 1000) {
-                for (int i = 0; i < 1000; i++) {
-                    toShow[i] = OriginalReceive[(ReceiveCount - 1000) + i];
-                }
+        }
+//        else if (OriginalReceive != null) {
+//            byte[] toShow = new byte[1000];
+//            if (ReceiveCount > 1000) {
+//                for (int i = 0; i < 1000; i++) {
+//                    toShow[i] = OriginalReceive[(ReceiveCount - 1000) + i];
+//                }
+//            }
+//            mReception.setText(toHexString(toShow, 1000));
+////            mReception.setSelection(mReception.length());
+//        }
+        else {
+            if(mReceiver.length() > 0) {
+                mReception.setText("");
+                appendDisplay(toHexString(mReceiver.toString().getBytes(),mReceiver.length()));
             }
-            mReception.setText(toHexString(toShow, 1000));
-//            mReception.setSelection(mReception.length());
         }
     }
 
